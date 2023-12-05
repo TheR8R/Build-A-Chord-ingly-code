@@ -61,7 +61,6 @@ int index = 0; // index for keeping track of which chord we have reached, so we 
 void setup() {
   Wire.begin(); //I2C connectionsetup master. No paramaeter indicates this is the master
   Serial.begin(9600); // connect to the serial port
-  delay(1000); //without this delay the miniplayer wont work
   softwareSerial.begin(9600);// Init serial port for DFPlayer Mini
 
   if (player.begin(softwareSerial, true, false)) {
@@ -73,11 +72,6 @@ void setup() {
   }
   pinMode(startButtonPin, INPUT); //initialize the pushbutton pin
   pinMode(checkButtonPin, INPUT); //initialize the checkbutton pin
-}
-
-Chord getChord() {
-  int chordNumberForSlave = random(sizeof(chords));
-  return chords[chordNumberForSlave];
 }
 
 // Function to convert Chord struct to a char array
@@ -97,16 +91,13 @@ void sendChordToSlave(int slaveAddr, Chord chord) {
 
 float receiveNoteFromSlave(int slaveAddr) {
   Wire.requestFrom(slaveAddr, 1); //Request 1 bytes from slave 
-  String dataString = "";
-  while (Wire.available()) {
-    char c = Wire.read();
-    dataString = dataString + c;
+  String dataString = "";  // create a string for accumulation
+  while (Wire.available()) { //while we are recieving stuff from slave
+    char c = Wire.read(); //read what we got
+    dataString = dataString + c; //accumulate it
   }
-  float tmp = dataString.toFloat();
-  delay(500);
-  //Serial.println("i received stuff from slave " + slaveAddr);
-  //Serial.println(tmp);
-  return tmp;
+  float tmp = dataString.toFloat(); //turn the data into a float
+  return tmp; //return it
 }
 
 /* 
@@ -143,18 +134,16 @@ void playCurrentChord (Chord chord){
   and performs the actions, depending on which state the buttons are in
 */
 void listen () {
-  lastReadNote = 0;
+  lastReadNote = 0; //We need to reset this so blocks can be placed again
 
-  //Serial.println("button pressed");
-  if(checkButtonState == LOW){
-    currentChord = chords[index];
-    index += 1;
-    if(index == 7) {
+  if(checkButtonState == LOW){ //if have not failed checking for the current chord
+    currentChord = chords[index]; //get the chord we are trying to make
+    index += 1; //increment the index, such that next time we can get the next chord
+    if(index == 7) { //if we have reached this point, we are out of chords and have to start over
       index = 0;
     }
   }
   //Serial.println(currentChord.tone1);
-
   playNameOfChord(currentChord);
   //transmit the selected chord to the slaves
   sendChordToSlave(1, currentChord);
@@ -165,39 +154,36 @@ void listen () {
   startButtonState = digitalRead(startButtonPin); // Needed for making a new chord
   checkButtonState = digitalRead(checkButtonPin); // This is needed for the try again with check button
   while(checkButtonState == LOW){
-    //Serial.println("I am in the loop GET ME OUT!");
-    
     responseFrom1 = receiveNoteFromSlave(1);
     responseFrom2 = receiveNoteFromSlave(2);
 
-    //the master listens to his own RFID reader.
-    while(Serial.available() > 0) {
+       //the master listens to his own RFID reader.
+    while(Serial.available() > 0) {   //as long as we can read something, then do it
       currentReadNote += Serial.read(); // Accumulate the info of the tag read by the rfid reader
     }
 
-    if(currentReadNote != 0){
-      lastReadNote = currentReadNote;
+    if(currentReadNote != 0){ //if we have read something
+      lastReadNote = currentReadNote; //then assign it to lastReadNote
     }
-    currentReadNote = 0;
-    //Serial.println(lastReadNote);
-    bool noteIsPartOfCurrentChord = (currentChord.tone1 == lastReadNote || currentChord.tone2 == lastReadNote || currentChord.tone3 == lastReadNote);
-    if(noteIsPartOfCurrentChord) {
+    currentReadNote = 0; //reset current read note, to allow for other note-blocks to be read
+    bool noteIsPartOfCurrentChord = (currentChord.tone1 == lastReadNote || currentChord.tone2 == lastReadNote || currentChord.tone3 == lastReadNote); //check if the note-block we just read is a part of the chord we are making
+    if(noteIsPartOfCurrentChord) { //if yes
       responseFromSelf = 1;
-      //Serial.println(responseFromSelf);
-    } else {
-      responseFromSelf = 0;
+    } else {  // if no
+      responseFromSelf = 0; 
     }
-    startButtonState = digitalRead(startButtonPin);
-    if (startButtonState == HIGH) {
-      listen();
+    
+    startButtonState = digitalRead(startButtonPin); //check if start button is pressed
+    if (startButtonState == HIGH) { //check if the start button has been presed to allow cycling through the chords
+      delay(300); // very important 300 milisecond delay, that ensures cycling through chords works as intended
+      listen(); //start over the method, such that a new chord can be send to slaves
     } 
-
-    checkButtonState = digitalRead(checkButtonPin);
+    
+    checkButtonState = digitalRead(checkButtonPin); //check the checkbutton such that we can exit this method and go to loop
   }
 }
 
 void loop () {
-
   startButtonState = digitalRead(startButtonPin); //read state
   if (startButtonState == HIGH) {
     listen(); // start listening for the next chord
@@ -206,19 +192,15 @@ void loop () {
   if(currentChord.tone1 != 0){
     checkButtonState = digitalRead(checkButtonPin);
     if (checkButtonState == HIGH) {
-      //Serial.println("ey this one works too and we stopped the loop");
       bool correctChordHasBeenProduced = (responseFrom1 == 1 && responseFromSelf == 1  && responseFrom2 == 1);
       if(correctChordHasBeenProduced) {
-        //Serial.print("YES! all tags reported true and it worked!");
         playCurrentChord(currentChord); //play the current chords
       } else {
         // the chord was not produced correctly
-        //Serial.print("yeh no, the things weren't read correctly");
         player.play(8); //wrong you failed
-        delay(3000);
+        delay(3000); //Delay to allow the failed sound to finish playing
         listen();  // start listening for the next chord
       }
     }
   }
 }
-
