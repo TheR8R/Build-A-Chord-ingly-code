@@ -97,6 +97,7 @@ float receiveNoteFromSlave(int slaveAddr) {
     dataString = dataString + c; //accumulate it
   }
   float tmp = dataString.toFloat(); //turn the data into a float
+  delay(85);
   return tmp; //return it
 }
 
