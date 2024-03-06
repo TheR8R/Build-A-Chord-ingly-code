@@ -25,7 +25,6 @@ void setup() {
 }
 
 void loop() {
-  delay(500); // Delay for 500 milliseconds
   while(Serial.available() > 0) {
     currentReadNote += Serial.read(); // Accumulate the info of the tag read by the rfid reader
     //Serial.println(noteRead);
