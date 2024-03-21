@@ -59,7 +59,7 @@ Chord NoChord = {0, 0, 0, 0}; //No Chord
 Chord chords[] = {AChord, BChord, CChord, DChord, EChord, FChord, GChord};
 
 //an array of random numbers for getting the chords in a seemingly random order in sandboxMode
-int chordNumber[] = {3, 6, 2, 5, 1, 7, 4, 3, 2, 6, 4, 1, 5, 7, 2, 3, 6, 1, 4, 5, 7};
+int chordNumber[] = {2, 5, 1, 4, 0, 6, 3, 2, 1, 5, 3, 0, 4, 6, 1, 2, 5, 0, 3, 4, 6};
 
 Chord currentChord = NoChord;
 int index = 0; // index for keeping track of which chord we have reached, so we don't go out of bound
@@ -254,6 +254,8 @@ void sandboxMode(){
       sandboxIndex = -1;
     }
     sandboxIndex += 1;
+    player.play(14);
+    delay(2000);
     currentChord = chords[chordIndex]; //get the chord we are trying to make
     correctChord = 0;
   }
