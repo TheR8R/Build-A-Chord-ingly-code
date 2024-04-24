@@ -69,11 +69,13 @@ void setup() {
   Wire.begin(); //I2C connectionsetup master. No paramaeter indicates this is the master
   Serial.begin(9600); // connect to the serial port
   softwareSerial.begin(9600);// Init serial port for DFPlayer Mini
+  Serial.println("start");
 
   if (player.begin(softwareSerial, true, false)) {
     Serial.println("OK");
+    Serial.println("so");
     // Set volume to maximum (0 to 30).
-    player.volume(15);
+    player.volume(17);
   } else {
     Serial.println("Connecting to DFPlayer Mini failed!");
   }
@@ -160,9 +162,9 @@ void assignValue(int slaveNumber, float blockNumber){
   and performs the actions, depending on which state the buttons are in
 */
 void listen () {
-  Serial.println("we in listen");
+  Serial.println("Suckl");
   lastReadNote = 0; //We need to reset this so blocks can be placed again
-
+  Serial.println(checkButtonState);
   if(checkButtonState == LOW){ //if have not failed checking for the current chord
     currentChord = chords[index]; //get the chord we are trying to make
     index += 1; //increment the index, such that next time we can get the next chord
@@ -171,6 +173,8 @@ void listen () {
     }
   }
   playNameOfChord(currentChord);
+  Serial.println("current Chord");
+  Serial.println(index);
   //transmit the selected chord to the slaves
   sendChordToSlave(1, currentChord);
   sendChordToSlave(2, currentChord);
@@ -328,7 +332,7 @@ void sandboxMode(){
             }
           }
           if(chordHasPlayed == 0){
-            player.play(11); //wrong you failed
+            player.play(9); //wrong you failed
             delay(3000); //Delay to allow the failed sound to finish playing
 
           }
@@ -348,12 +352,12 @@ void loop () {
   checkButtonState = digitalRead(checkButtonPin); // This is needed for the try again with check button
   delay(500);
   if(modeToggle == 1){
-    player.play(10); 
+    player.play(11); 
     delay(3000); //Delay to allow the failed sound to finish playing
     sandboxMode();
   }
   if(modeToggle == 0){
-    player.play(9); 
+    player.play(10); 
     delay(3000); //Delay to allow the failed sound to finish playing
     listen();
   }
